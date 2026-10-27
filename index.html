@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ระบบจำลองการจัดวางวงกลม (Circle Packing Visualizer)</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    body {
+      background-color: #0b0f19;
+      color: #e2e8f0;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    header {
+      background: #111827;
+      border-bottom: 1px solid #1f2937;
+      padding: 1rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .title-group h1 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #f8fafc;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .badge {
+      background: #3b82f620;
+      color: #60a5fa;
+      border: 1px solid #3b82f640;
+      font-size: 0.75rem;
+      padding: 0.2rem 0.5rem;
+      border-radius: 9999px;
+    }
+    .stats-bar {
+      display: flex;
+      gap: 1rem;
+      background: #1f2937;
+      padding: 0.5rem 1rem;
+      border-radius: 0.5rem;
+      font-size: 0.875rem;
+    }
+    .stat-val {
+      font-weight: bold;
+      color: #38bdf8;
+    }
+    .main-container {
+      display: flex;
+      flex: 1;
+      gap: 1.5rem;
+      padding: 1.5rem;
+      max-width: 1400px;
+      margin: 0 auto;
+      width: 100%;
+    }
+    @media (max-width: 900px) {
+      .main-container {
+        flex-direction: column;
+      }
+    }
+    .canvas-card {
+      flex: 1;
+      background: #111827;
+      border: 1px solid #1f2937;
+      border-radius: 0.75rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      min-height: 500px;
+      padding: 1rem;
+    }
+    .canvas-container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      min-height: 450px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    canvas {
+      background: #090d16;
+      border-radius: 0.5rem;
+      box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
+      cursor: crosshair;
+      touch-action: none;
+    }
+    .controls-card {
+      width: 360px;
+      background: #111827;
+      border: 1px solid #1f2937;
+      border-radius: 0.75rem;
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+    @media (max-width: 900px) {
+      .controls-card {
+        width: 100%;
+      }
+    }
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .control-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.875rem;
+      color: #94a3b8;
+    }
+    .control-label span:last-child {
+      color: #f1f5f9;
+      font-weight: 600;
+    }
+    input[type="range"] {
+      width: 100%;
+      accent-color: #3b82f6;
+      background: #1f2937;
+      height: 6px;
+      border-radius: 3px;
+      outline: none;
+    }
+    .btn {
+      width: 100%;
+      padding: 0.75rem;
+      border: none;
+      border-radius: 0.5rem;
+      font-weight: 600;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+    .btn-gemini {
+      background: linear-gradient(135deg, #f59e0b, #ec4899, #8b5cf6);
+      color: white;
+      box-shadow: 0 4px 15px rgba(236, 72, 153, 0.3);
+      font-size: 1rem;
+    }
+    .btn-gemini:hover {
+      opacity: 0.95;
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(236, 72, 153, 0.4);
+    }
+    .btn-claude {
+      background: linear-gradient(135deg, #d97757, #c2410c);
+      color: white;
+      box-shadow: 0 4px 15px rgba(217, 119, 87, 0.35);
+      font-size: 1rem;
+    }
+    .btn-claude:hover:not(:disabled) {
+      opacity: 0.95;
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(217, 119, 87, 0.45);
+    }
+    .btn-claude:disabled {
+      opacity: 0.7;
+      cursor: wait;
+    }
+    .btn-secondary {
+      background: #1f2937;
+      color: #e2e8f0;
+      border: 1px solid #374151;
+    }
+    .btn-secondary:hover {
+      background: #374151;
+    }
+    .toggle-group {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #1f293740;
+      padding: 0.75rem;
+      border-radius: 0.5rem;
+      border: 1px solid #1f2937;
+    }
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 44px;
+      height: 24px;
+    }
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: #374151;
+      transition: .3s;
+      border-radius: 24px;
+    }
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .3s;
+      border-radius: 50%;
+    }
+    input:checked + .slider {
+      background-color: #10b981;
+    }
+    input:checked + .slider:before {
+      transform: translateX(20px);
+    }
+    .info-box {
+      background: #1f293750;
+      border-left: 3px solid #3b82f6;
+      padding: 0.75rem;
+      font-size: 0.8rem;
+      color: #94a3b8;
+      line-height: 1.4;
+      border-radius: 0 0.5rem 0.5rem 0;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="title-group">
+      <h1>🔵 ระบบจัดวางวงกลม (Circle Packing Visualizer)</h1>
+      <span class="badge">Physics Engine Active</span>
+    </div>
+    <div class="stats-bar">
+      <div>ความหนาแน่น: <span id="stat-density" class="stat-val">77.89%</span></div>
+      <div>พื้นที่ว่าง: <span id="stat-wasted" class="stat-val">22.11%</span></div>
+    </div>
+  </header>
+
+  <div class="main-container">
+    <div class="canvas-card">
+      <div class="canvas-container" id="canvas-wrapper">
+        <canvas id="circleCanvas"></canvas>
+      </div>
+    </div>
+
+    <div class="controls-card">
+      <button class="btn btn-gemini" id="btn-gemini">✨ ขอบคุณGemini (ปรับขนาดและจัดวางสมบูรณ์แบบ)</button>
+      <button class="btn btn-claude" id="btn-claude">🧡 ขอบคุณClaude (เต็มพอดี ไม่ทับกัน)</button>
+
+      <div class="toggle-group">
+        <div>
+          <div style="font-weight: 600; font-size: 0.875rem;">🔒 โหมด Rigid Body</div>
+          <div style="font-size: 0.75rem; color: #94a3b8;">ห้ามวงกลมทับกันและห้ามออกนอกขอบ</div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="rigid-toggle" checked>
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <div class="control-group">
+        <div class="control-label">
+          <span>จำนวนวงกลมย่อย (N)</span>
+          <span id="val-n">12 วง</span>
+        </div>
+        <input type="range" id="slider-n" min="1" max="20" value="12">
+      </div>
+
+      <div class="control-group">
+        <div class="control-label">
+          <span>รัศมีวงกลมใหญ่ (R)</span>
+          <span id="val-R">180 px</span>
+        </div>
+        <input type="range" id="slider-R" min="100" max="250" value="180">
+      </div>
+
+      <div class="control-group">
+        <div class="control-label">
+          <span>รัศมีวงกลมย่อย (r)</span>
+          <span id="val-r">45.78 px</span>
+        </div>
+        <input type="range" id="slider-r" min="10" max="250" value="45.78" step="0.01">
+      </div>
+
+      <button class="btn btn-secondary" id="btn-reset">🔄 รีเซ็ตตำแหน่ง (3 + 9)</button>
+
+      <div class="info-box">
+        💡 <b>เคล็ดลับ:</b> คุณสามารถใช้เมาส์หรือนิ้วลากวงกลมย่อยแต่ละวงเพื่อจัดวางอิสระได้ ระบบจะป้องกันไม่ให้วงกลมซ้อนทับกันโดยอัตโนมัติ
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('circleCanvas');
+    const ctx = canvas.getContext('2d');
+    const wrapper = document.getElementById('canvas-wrapper');
+
+    // Controls
+    const sliderN = document.getElementById('slider-n');
+    const sliderR = document.getElementById('slider-R');
+    const sliderRSub = document.getElementById('slider-r');
+    const rigidToggle = document.getElementById('rigid-toggle');
+    const btnGemini = document.getElementById('btn-gemini');
+    const btnReset = document.getElementById('btn-reset');
+    const btnClaude = document.getElementById('btn-claude');
+
+    const valN = document.getElementById('val-n');
+    const valR = document.getElementById('val-R');
+    const valRSub = document.getElementById('val-r');
+    const statDensity = document.getElementById('stat-density');
+    const statWasted = document.getElementById('stat-wasted');
+
+    let N = 12;
+    let R = 180;
+    let r = 180 * 0.25433;
+    let isRigid = true;
+
+    let circles = [];
+    let draggedCircle = null;
+    let dragOffsetX = 0;
+    let dragOffsetY = 0;
+
+    let width = 500;
+    let height = 500;
+    let centerX = width / 2;
+    let centerY = height / 2;
+
+    function resizeCanvas() {
+      const rect = wrapper.getBoundingClientRect();
+      width = Math.max(300, rect.width);
+      height = Math.max(450, rect.height);
+      
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
+      canvas.style.width = width + 'px';
+      canvas.style.height = height + 'px';
+      
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      const newCX = width / 2;
+      const newCY = height / 2;
+      const shiftX = newCX - centerX;
+      const shiftY = newCY - centerY;
+      circles.forEach(c => { c.x += shiftX; c.y += shiftY; });
+      centerX = newCX;
+      centerY = newCY;
+      draw();
+    }
+
+    class Circle {
+      constructor(x, y, id) {
+        this.x = x;
+        this.y = y;
+        this.id = id;
+      }
+    }
+
+    function initOptimalLayout() {
+      circles = [];
+      if (N === 12) {
+        // 3 center circles
+        const rCenter = r * 1.155;
+        for (let i = 0; i < 3; i++) {
+          const angle = (i * 2 * Math.PI / 3) - Math.PI / 2;
+          circles.push(new Circle(
+            centerX + rCenter * Math.cos(angle),
+            centerY + rCenter * Math.sin(angle),
+            i
+          ));
+        }
+        // 9 outer circles
+        const rOuter = R - r;
+        for (let i = 0; i < 9; i++) {
+          const angle = (i * 2 * Math.PI / 9) - Math.PI / 2;
+          circles.push(new Circle(
+            centerX + rOuter * Math.cos(angle),
+            centerY + rOuter * Math.sin(angle),
+            i + 3
+          ));
+        }
+      } else {
+        // Grid/Ring fallback
+        for (let i = 0; i < N; i++) {
+          const angle = (i * 2 * Math.PI) / N;
+          const dist = (R - r) * 0.6;
+          circles.push(new Circle(centerX + dist * Math.cos(angle), centerY + dist * Math.sin(angle), i));
+        }
+      }
+      resolveCollisions();
+      updateStats();
+      draw();
+    }
+
+    function resolveCollisions() {
+      if (!isRigid) return;
+
+      const iterations = 8;
+      for (let iter = 0; iter < iterations; iter++) {
+        // 1. Boundary constraint (Keep inside big circle)
+        for (let c of circles) {
+          const dx = c.x - centerX;
+          const dy = c.y - centerY;
+          const dist = Math.hypot(dx, dy);
+          const maxDist = R - r;
+
+          if (dist > maxDist && maxDist > 0) {
+            const factor = maxDist / (dist || 1);
+            c.x = centerX + dx * factor;
+            c.y = centerY + dy * factor;
+          }
+        }
+
+        // 2. Circle to Circle Collision (No overlap)
+        for (let i = 0; i < circles.length; i++) {
+          for (let j = i + 1; j < circles.length; j++) {
+            const c1 = circles[i];
+            const c2 = circles[j];
+            const dx = c2.x - c1.x;
+            const dy = c2.y - c1.y;
+            const dist = Math.hypot(dx, dy);
+            const minDist = r * 2;
+
+            if (dist < minDist) {
+              const overlap = minDist - dist;
+              const nx = (dx / (dist || 1));
+              const ny = (dy / (dist || 1));
+
+              if (c1 === draggedCircle) {
+                c2.x += nx * overlap;
+                c2.y += ny * overlap;
+              } else if (c2 === draggedCircle) {
+                c1.x -= nx * overlap;
+                c1.y -= ny * overlap;
+              } else {
+                c1.x -= nx * overlap * 0.5;
+                c1.y -= ny * overlap * 0.5;
+                c2.x += nx * overlap * 0.5;
+                c2.y += ny * overlap * 0.5;
+              }
+            }
+          }
+        }
+      }
+    }
+
+    function updateStats() {
+      const areaBig = Math.PI * R * R;
+      const areaSmallTotal = N * Math.PI * r * r;
+      let density = (areaSmallTotal / areaBig) * 100;
+      if (density > 100) density = 100;
+      const wasted = 100 - density;
+
+      statDensity.textContent = density.toFixed(2) + '%';
+      statWasted.textContent = wasted.toFixed(2) + '%';
+
+      valN.textContent = N + ' วง';
+      valR.textContent = R + ' px';
+      valRSub.textContent = parseFloat(r).toFixed(2) + ' px';
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, width, height);
+
+      // Draw Big Circle
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, R, 0, Math.PI * 2);
+      ctx.fillStyle = '#1e293b';
+      ctx.fill();
+      ctx.strokeStyle = '#38bdf8';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+
+      // Draw Center Axis Point
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, 3, 0, Math.PI * 2);
+      ctx.fillStyle = '#64748b';
+      ctx.fill();
+
+      // Draw Small Circles
+      circles.forEach((c, idx) => {
+        ctx.beginPath();
+        ctx.arc(c.x, c.y, r, 0, Math.PI * 2);
+        ctx.fillStyle = (c === draggedCircle) ? 'rgba(59, 130, 246, 0.6)' : 'rgba(99, 102, 241, 0.35)';
+        ctx.fill();
+        ctx.strokeStyle = '#818cf8';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Center dot
+        ctx.beginPath();
+        ctx.arc(c.x, c.y, 3, 0, Math.PI * 2);
+        ctx.fillStyle = '#f43f5e';
+        ctx.fill();
+
+        // Index Label
+        ctx.fillStyle = '#cbd5e1';
+        ctx.font = '10px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(idx + 1, c.x, c.y + 12);
+      });
+    }
+
+    // Interaction Listeners
+    function getPointerPos(e) {
+      const rect = canvas.getBoundingClientRect();
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      return {
+        x: clientX - rect.left,
+        y: clientY - rect.top
+      };
+    }
+
+    function onPointerDown(e) {
+      const pos = getPointerPos(e);
+      let hit = false;
+      for (let c of circles) {
+        const dist = Math.hypot(pos.x - c.x, pos.y - c.y);
+        if (dist <= r) {
+          draggedCircle = c;
+          dragOffsetX = pos.x - c.x;
+          dragOffsetY = pos.y - c.y;
+          hit = true;
+          break;
+        }
+      }
+    }
+
+    function onPointerMove(e) {
+      if (!draggedCircle) return;
+      if (e.cancelable) e.preventDefault();
+      const pos = getPointerPos(e);
+      draggedCircle.x = pos.x - dragOffsetX;
+      draggedCircle.y = pos.y - dragOffsetY;
+
+      resolveCollisions();
+      draw();
+    }
+
+    function onPointerUp() {
+      draggedCircle = null;
+    }
+
+    canvas.addEventListener('mousedown', onPointerDown);
+    canvas.addEventListener('mousemove', onPointerMove);
+    window.addEventListener('mouseup', onPointerUp);
+
+    canvas.addEventListener('touchstart', onPointerDown, { passive: false });
+    canvas.addEventListener('touchmove', onPointerMove, { passive: false });
+    window.addEventListener('touchend', onPointerUp);
+
+    // Controls Event Listeners
+    sliderN.addEventListener('input', (e) => {
+      N = parseInt(e.target.value);
+      initOptimalLayout();
+    });
+
+    sliderR.addEventListener('input', (e) => {
+      R = parseFloat(e.target.value);
+      r = R * 0.25433;
+      sliderRSub.value = r;
+      initOptimalLayout();
+    });
+
+    sliderRSub.addEventListener('input', (e) => {
+      r = parseFloat(e.target.value);
+      resolveCollisions();
+      updateStats();
+      draw();
+    });
+
+    rigidToggle.addEventListener('change', (e) => {
+      isRigid = e.target.checked;
+      if (isRigid) {
+        resolveCollisions();
+        draw();
+      }
+    });
+
+    btnReset.addEventListener('click', () => {
+      initOptimalLayout();
+    });
+
+    // ✨ ขอบคุณGemini Button Action
+    btnGemini.addEventListener('click', () => {
+      sliderN.value = 12;
+      N = 12;
+      
+      // Calculate exact theoretical ratio for zero overlap & max packing
+      r = R * 0.254333;
+      sliderRSub.value = r;
+
+      initOptimalLayout();
+    });
+
+    // ===== Claude Optimizer: หาขนาด r ที่ใหญ่ที่สุดโดยไม่ทับกัน =====
+    // แปลงปัญหา: วางจุด N จุดในวงกลมหน่วย ให้ระยะห่างต่ำสุด m มากที่สุด  แล้ว r = m*R/(2+m)
+    function pairMin(pts) {
+      let m = Infinity;
+      for (let i = 0; i < pts.length; i++) {
+        for (let j = i + 1; j < pts.length; j++) {
+          const d = Math.hypot(pts[i][0] - pts[j][0], pts[i][1] - pts[j][1]);
+          if (d < m) m = d;
+        }
+      }
+      return m;
+    }
+
+    function clampUnit(p) {
+      const d = Math.hypot(p[0], p[1]);
+      if (d > 1) { p[0] /= d; p[1] /= d; }
+    }
+
+    function randomStart(n) {
+      const pts = [];
+      const mode = Math.random();
+      if (mode < 0.5) {
+        for (let i = 0; i < n; i++) {
+          const a = Math.random() * Math.PI * 2;
+          const d = Math.sqrt(Math.random());
+          pts.push([d * Math.cos(a), d * Math.sin(a)]);
+        }
+      } else {
+        // เริ่มแบบวงแหวน: ข้างนอก k จุด ที่เหลือสุ่มข้างใน
+        const k = Math.max(1, Math.min(n, Math.round(n * (0.5 + Math.random() * 0.4))));
+        const off = Math.random() * Math.PI * 2;
+        for (let i = 0; i < k; i++) {
+          const a = off + (i * 2 * Math.PI) / k;
+          pts.push([Math.cos(a), Math.sin(a)]);
+        }
+        for (let i = k; i < n; i++) {
+          const a = Math.random() * Math.PI * 2;
+          const d = 0.6 * Math.sqrt(Math.random());
+          pts.push([d * Math.cos(a), d * Math.sin(a)]);
+        }
+      }
+      return pts;
+    }
+
+    function energyRelax(pts) {
+      const n = pts.length;
+      const exps = [6, 12, 24, 48, 96, 192, 384];
+      let step = 0.08;
+      const fx = new Array(n), fy = new Array(n);
+      for (const p of exps) {
+        for (let it = 0; it < 120; it++) {
+          const m = pairMin(pts);
+          if (!(m > 1e-9)) {
+            for (const q of pts) { q[0] += (Math.random() - 0.5) * 0.01; q[1] += (Math.random() - 0.5) * 0.01; clampUnit(q); }
+            continue;
+          }
+          fx.fill(0); fy.fill(0);
+          for (let i = 0; i < n; i++) {
+            for (let j = i + 1; j < n; j++) {
+              const dx = pts[i][0] - pts[j][0];
+              const dy = pts[i][1] - pts[j][1];
+              const d2 = dx * dx + dy * dy;
+              const d = Math.sqrt(d2);
+              const w = Math.pow(m / d, p) / d2;
+              fx[i] += dx * w; fy[i] += dy * w;
+              fx[j] -= dx * w; fy[j] -= dy * w;
+            }
+          }
+          let fmax = 0;
+          for (let i = 0; i < n; i++) fmax = Math.max(fmax, Math.hypot(fx[i], fy[i]));
+          if (fmax === 0) break;
+          const s = (step * m) / fmax;
+          for (let i = 0; i < n; i++) {
+            pts[i][0] += fx[i] * s;
+            pts[i][1] += fy[i] * s;
+            clampUnit(pts[i]);
+          }
+        }
+        step *= 0.65;
+      }
+      return pts;
+    }
+
+    // พยายามดันให้ระยะห่างต่ำสุด >= target ภายในวงกลมหน่วย
+    function relaxTo(src, target, iters) {
+      const pts = src.map(p => [p[0], p[1]]);
+      const n = pts.length;
+      for (let it = 0; it < iters; it++) {
+        let worst = Infinity;
+        for (let i = 0; i < n; i++) {
+          for (let j = i + 1; j < n; j++) {
+            let dx = pts[j][0] - pts[i][0];
+            let dy = pts[j][1] - pts[i][1];
+            let d = Math.hypot(dx, dy);
+            if (d < worst) worst = d;
+            if (d < target) {
+              if (d < 1e-12) { dx = Math.random() - 0.5; dy = Math.random() - 0.5; d = Math.hypot(dx, dy); }
+              const push = (target - d) / 2 * 1.02;
+              const nx = dx / d, ny = dy / d;
+              pts[i][0] -= nx * push; pts[i][1] -= ny * push;
+              pts[j][0] += nx * push; pts[j][1] += ny * push;
+            }
+          }
+        }
+        for (const p of pts) clampUnit(p);
+        if (worst >= target) break;
+      }
+      return pts;
+    }
+
+    function polish(pts) {
+      let best = pts;
+      let lo = pairMin(pts);
+      let hi = lo * 1.03;
+      for (let k = 0; k < 16; k++) {
+        const mid = (lo + hi) / 2;
+        const t = relaxTo(best, mid, 700);
+        const m = pairMin(t);
+        if (m >= mid * (1 - 1e-9)) { lo = m; best = t; } else { hi = mid; }
+      }
+      return best;
+    }
+
+    const packCache = {};
+    const tick = () => new Promise(res => setTimeout(res, 0));
+
+    async function findOptimalPacking(n, Rpx, onProgress) {
+      if (n === 1) return { pts: [[0, 0]], r: Rpx };
+      if (packCache[n]) {
+        const c = packCache[n];
+        return { pts: c.pts.map(p => [p[0] * Rpx, p[1] * Rpx]), r: c.r * Rpx };
+      }
+      const tries = n <= 8 ? 25 : 30 + n * 4;
+      const cands = [];
+      for (let t = 0; t < tries; t++) {
+        const pts = energyRelax(randomStart(n));
+        cands.push({ pts, m: pairMin(pts) });
+        if (onProgress) onProgress((t + 1) / (tries + 2));
+        await tick();
+      }
+      cands.sort((a, b) => b.m - a.m);
+      let bestPts = null, bestM = -1;
+      for (let k = 0; k < Math.min(2, cands.length); k++) {
+        const pp = polish(cands[k].pts);
+        if (onProgress) onProgress((tries + k + 1) / (tries + 2));
+        await tick();
+        const m = pairMin(pp);
+        if (m > bestM) { bestM = m; bestPts = pp; }
+      }
+      // คำนวณ r จริงจากตำแหน่งสุดท้าย เพื่อให้ทับกัน = 0 พอดี
+      const rho = Rpx / (1 + bestM / 2);       // R - r  (ระยะศูนย์กลางสูงสุด)
+      let r = (bestM * rho) / 2;
+      const px = bestPts.map(p => [p[0] * rho, p[1] * rho]);
+      let minPair = Infinity, maxD = 0;
+      for (let i = 0; i < n; i++) {
+        maxD = Math.max(maxD, Math.hypot(px[i][0], px[i][1]));
+        for (let j = i + 1; j < n; j++) minPair = Math.min(minPair, Math.hypot(px[i][0] - px[j][0], px[i][1] - px[j][1]));
+      }
+      r = Math.min(minPair / 2, Rpx - maxD) - 1e-9;
+      packCache[n] = { pts: px.map(p => [p[0] / Rpx, p[1] / Rpx]), r: r / Rpx };
+      return { pts: px, r };
+    }
+
+
+    let claudeBusy = false;
+
+    function animateTo(targetPts, targetR, ms) {
+      return new Promise(resolve => {
+        const startR = r;
+        const startPts = circles.map(c => [c.x, c.y]);
+        const t0 = performance.now();
+        function frame(now) {
+          let t = Math.min(1, (now - t0) / ms);
+          const e = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+          r = startR + (targetR - startR) * e;
+          circles.forEach((c, i) => {
+            c.x = startPts[i][0] + (targetPts[i][0] - startPts[i][0]) * e;
+            c.y = startPts[i][1] + (targetPts[i][1] - startPts[i][1]) * e;
+          });
+          draw();
+          if (t < 1) requestAnimationFrame(frame); else resolve();
+        }
+        requestAnimationFrame(frame);
+      });
+    }
+
+    btnClaude.addEventListener('click', async () => {
+      if (claudeBusy) return;
+      claudeBusy = true;
+      btnClaude.disabled = true;
+      const label = btnClaude.textContent;
+      try {
+        // ให้จำนวนวงกลมตรงกับ circles ปัจจุบัน
+        if (circles.length !== N) initOptimalLayout();
+        btnClaude.textContent = '⏳ กำลังคำนวณ... 0%';
+        const res = await findOptimalPacking(N, R, p => {
+          btnClaude.textContent = '⏳ กำลังคำนวณ... ' + Math.round(p * 100) + '%';
+        });
+        const targets = res.pts.map(p => [centerX + p[0], centerY + p[1]]);
+        await animateTo(targets, res.r, 700);
+        // ตั้งค่าสุดท้ายให้แม่นยำ (ไม่ผ่าน resolveCollisions เพราะไม่มีการทับกันอยู่แล้ว)
+        r = res.r;
+        circles.forEach((c, i) => { c.x = targets[i][0]; c.y = targets[i][1]; });
+        sliderRSub.value = r;
+        updateStats();
+        draw();
+      } finally {
+        btnClaude.textContent = label;
+        btnClaude.disabled = false;
+        claudeBusy = false;
+      }
+    });
+
+    window.addEventListener('resize', resizeCanvas);
+    
+    // Initial start
+    resizeCanvas();
+    initOptimalLayout();
+    window.addEventListener('load', () => { resizeCanvas(); });
+  </script>
+</body>
+</html>
